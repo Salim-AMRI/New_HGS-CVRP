@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG CMakeFiles/lib_test_c.dir/test.c.o -o lib_test_c  -Wl,-rpath,/home/etud/Bureau/HGS-CVRP/build -lm ../../libhgscvrp.so 
