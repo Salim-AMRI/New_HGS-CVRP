@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <random>
 #include <fstream>
+#include <unordered_map>
 
 void Genetic::run()
 {
