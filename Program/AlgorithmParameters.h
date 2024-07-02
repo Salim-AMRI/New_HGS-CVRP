@@ -26,6 +26,15 @@ struct AlgorithmParameters {
 	int useSwapStar;		// Use SWAP* local search or not. Default value: 1. Only available when coordinates are provided.
 	
 	int crossoverType;		// Crossover Type
+	
+	int nbCut;
+    
+    int eqSeg;
+    int useCostBenefit;
+    int randSelect;
+    int insertSeg;
+    
+    
 };
 
 #ifdef __cplusplus

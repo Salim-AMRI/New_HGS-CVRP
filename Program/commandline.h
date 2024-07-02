@@ -53,13 +53,27 @@ public:
 		{
 			pathInstance = std::string(argv[1]);
             
-            ap.crossoverType = atoi(argv[2]);
             
-			pathSolution = std::string(argv[3]);
-			for (int i = 4; i < argc; i += 2)
+            pathSolution = std::string(argv[2]);
+    
+    
+			
+			for (int i = 3; i < argc; i += 2)
 			{
 				if (std::string(argv[i]) == "-t")
 					ap.timeLimit = atof(argv[i+1]);
+                else if (std::string(argv[i]) == "-crossoverType")
+					ap.crossoverType  = atoi(argv[i+1]);
+                else if (std::string(argv[i]) == "-nbCut")
+					ap.nbCut  = atoi(argv[i+1]);
+                else if (std::string(argv[i]) == "-eqSeg")
+					ap.eqSeg  = atoi(argv[i+1]);
+                else if (std::string(argv[i]) == "-useCostBenefit")
+					ap.useCostBenefit  = atoi(argv[i+1]);
+                else if (std::string(argv[i]) == "-randSelect")
+					ap.randSelect  = atoi(argv[i+1]);
+                else if (std::string(argv[i]) == "-insertSeg")
+					ap.insertSeg  = atoi(argv[i+1]);
 				else if (std::string(argv[i]) == "-it")
 					ap.nbIter  = atoi(argv[i+1]);
 				else if (std::string(argv[i]) == "-seed")

@@ -1383,13 +1383,32 @@ void Genetic::crossoverASSC(Individual &result, const Individual &parent1, const
     std::vector<bool> freqClient(params.nbClients + 1, false);
 
     // Point de coupe
-    int pointCoupe = 3;
+    int pointCoupe = params.ap.nbCut;
+    
+
     
     // Variables booléennes pour les options de crossover
-    bool segmentsEqual = true;
-    bool useCostBenefit = true;
-    bool randomSegmentSelection = true; // Mettez à true pour une sélection aléatoire, false pour une évaluation déterministe du score
-    bool insertionSegment = true;
+    bool segmentsEqual = false;
+    if(params.ap.eqSeg == 1){
+        segmentsEqual = true;
+    }
+    
+    bool useCostBenefit = false;
+    if(params.ap.useCostBenefit == 1){
+        useCostBenefit = true;
+    }
+
+    bool randomSegmentSelection = false;
+    if(params.ap.randSelect == 1){
+        randomSegmentSelection = true;
+    }
+    
+    bool insertionSegment = false;
+    if(params.ap.insertSeg == 1){
+        insertionSegment = true;
+    }
+    
+    
 
     // Génération aléatoire des points de coupe
     std::vector<int> pointsDeCoupeAleatoires;

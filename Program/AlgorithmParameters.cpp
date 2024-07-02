@@ -25,6 +25,18 @@ struct AlgorithmParameters default_algorithm_parameters() {
 	ap.nbIterTraces = 500;
 	ap.timeLimit = 0;
 	ap.useSwapStar = 1;
+    
+    
+    ap.crossoverType = 10;
+	
+	ap.nbCut = 2;
+    
+    ap.eqSeg = 0;
+    ap.useCostBenefit = 0;
+    ap.randSelect = 0;
+    ap.insertSeg = 0;
+    
+    
 
 	return ap;
 }
@@ -46,5 +58,11 @@ void print_algorithm_parameters(const AlgorithmParameters & ap)
 	std::cout << "---- nbIterTraces            is set to " << ap.nbIterTraces << std::endl;
 	std::cout << "---- timeLimit               is set to " << ap.timeLimit << std::endl;
 	std::cout << "---- useSwapStar             is set to " << ap.useSwapStar << std::endl;
-	std::cout << "==================================================" << std::endl;
+	std::cout << "---- crossoverType             is set to " << ap.crossoverType << std::endl;
+	std::cout << "---- nbCut             is set to " << ap.nbCut << std::endl;
+	std::cout << "---- eqSeg             is set to " << ap.eqSeg << std::endl;
+	std::cout << "---- useCostBenefit             is set to " << ap.useCostBenefit << std::endl;
+	std::cout << "---- randSelect             is set to " << ap.randSelect << std::endl;
+	std::cout << "---- insertSeg             is set to " << ap.insertSeg << std::endl;
+    std::cout << "==================================================" << std::endl;
 }
