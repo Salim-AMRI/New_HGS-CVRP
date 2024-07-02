@@ -44,8 +44,11 @@ public:
     void crossoverPMX(Individual & result, const Individual & parent1, const Individual & parent2);
     void crossoverEAX(Individual & result, const Individual & parent1, const Individual & parent2);
     void crossoverGrPX(Individual & result, const Individual & parent1, const Individual & parent2);
+    void crossoverGrPX2(Individual & result, const Individual & parent1, const Individual & parent2);
     void crossoverPathRelinking(Individual & result, const Individual & parent1, const Individual & parent2);
-    void crossoverGPX(Individual & result, const Individual & parent1, const Individual & parent2);
+    void crossoverGPX(Individual & result, const Individual & parent1, const Individual & parent2); 
+    void crossoverASSC(Individual & result, const Individual & parent1, const Individual & parent2); 
+    void crossoverASSC2(Individual & result, const Individual & parent1, const Individual & parent2);
     
     // Running the genetic algorithm until maxIterNonProd consecutive iterations or a time limit
     void run() ;
