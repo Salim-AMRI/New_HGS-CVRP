@@ -53,11 +53,8 @@ public:
 		{
 			pathInstance = std::string(argv[1]);
             
+			pathSolution = std::string(argv[2]);
             
-            pathSolution = std::string(argv[2]);
-    
-    
-			
 			for (int i = 3; i < argc; i += 2)
 			{
 				if (std::string(argv[i]) == "-t")
