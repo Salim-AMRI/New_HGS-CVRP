@@ -52,6 +52,8 @@ void Genetic::run()
                     crossoverASSC(offspring, population.getBinaryTournament(), population.getBinaryTournament());
                 } else if (params.ap.crossoverType == 11) {
                     crossoverASSC2(offspring, population.getBinaryTournament(), population.getBinaryTournament());
+                } else if (params.ap.crossoverType == 12) {
+                    crossoverGOX(offspring, population.getBinaryTournament(), population.getBinaryTournament());
                 }
 
         
@@ -1845,6 +1847,230 @@ void Genetic::crossoverASSC2(Individual &result, const Individual &parent1, cons
     }
     
     // Compléter l'individu avec l'algorithme de Split
+    split.generalSplit(result, parent1.eval.nbRoutes);
+}
+
+void Genetic::crossoverGOX(Individual &result, const Individual &parent1, const Individual &parent2)
+{
+    int nbClients = params.nbClients;
+    
+    // Point de coupe
+    int pointCut = params.ap.nbCut;
+    
+    // Variables booléennes pour les options de crossover
+    bool segmentsEqual = false;
+    if(params.ap.eqSeg == 1){
+        segmentsEqual = true;
+    }
+    
+    bool useCostBenefit = false;
+    if(params.ap.useCostBenefit == 1){
+        useCostBenefit = true;
+    }
+
+    bool randomSegmentSelection = false;
+    if(params.ap.randSelect == 1){
+        randomSegmentSelection = true;
+    }
+    
+    int insertionSegment = params.ap.insertSeg;
+
+    // Vérification que pointCut est valide
+    if (pointCut < 2 || pointCut > nbClients) {
+        throw std::invalid_argument("pointCut doit être entre 2 et nbClients.");
+    }
+
+    std::vector<int> cutPoints(pointCut);
+
+    if (segmentsEqual) {
+        std::uniform_int_distribution<> distr(0, nbClients - 1);
+        std::set<int> cuts;
+        while (cuts.size() < pointCut) {
+            cuts.insert(distr(params.ran));
+        }
+        cutPoints.assign(cuts.begin(), cuts.end());
+    } else {
+        int step = nbClients / pointCut;
+        for (int i = 0; i < pointCut; ++i) {
+            cutPoints[i] = i * step;
+        }
+    }
+
+    std::sort(cutPoints.begin(), cutPoints.end());
+
+    // Initialiser un tableau pour suivre les éléments déjà ajoutés
+    std::vector<bool> freqClient(nbClients + 1, false);
+
+    // Lambda pour évaluer un segment
+    auto evaluateSegment = [&](const std::vector<int>& segment, const Individual& parent) -> double {
+        double totalCost = 0.0;
+        double totalBenefit = 0.0;
+        std::vector<bool> tempFreqClient(freqClient);
+
+        int currentClient = 0;
+        for (int customer : segment) {
+            if (!tempFreqClient[customer]) {
+                double cost = params.timeCost[currentClient][customer];
+                double benefit = params.timeCost[0][customer] * params.cli[customer].demand;
+                totalCost += cost;
+                totalBenefit += benefit;
+                currentClient = customer;
+                tempFreqClient[customer] = true;
+            }
+        }
+        totalCost += params.timeCost[currentClient][0];
+        return useCostBenefit ? totalBenefit : totalCost;
+    };
+
+    // Création et évaluation des segments pour les deux parents
+    std::vector<std::vector<int>> segments(pointCut);
+    for (int k = 0; k < pointCut; ++k) {
+        int start = cutPoints[k];
+        int end = (k + 1 < pointCut) ? cutPoints[k + 1] : nbClients;
+        for (int i = start; i < end; ++i) {
+            segments[k].push_back(parent1.chromT[i % nbClients]);
+        }
+    }
+
+    std::vector<double> scores1(pointCut), scores2(pointCut);
+    for (int i = 0; i < pointCut; ++i) {
+        scores1[i] = evaluateSegment(segments[i], parent1);
+        scores2[i] = evaluateSegment(segments[i], parent2);
+    }
+
+    // Sélection des segments
+    std::vector<std::vector<int>> selectedSegmentsList;
+    std::vector<bool> segmentSelected(pointCut, false);
+    std::unordered_set<int> newlySelectedClients;
+
+    for (int i = 0; i < pointCut; ++i) {
+        int parentIndex = (i % 2 == 0) ? 0 : 1;
+        int minScoreSegmentIndex = -1;
+        double minScore = std::numeric_limits<double>::max();
+
+        if (randomSegmentSelection) {
+            do {
+                minScoreSegmentIndex = std::rand() % pointCut;
+            } while (segmentSelected[minScoreSegmentIndex]);
+        } else {
+            for (int j = 0; j < pointCut; ++j) {
+                double score = (parentIndex == 0 ? scores1[j] : scores2[j]);
+                if (!segmentSelected[j] && score < minScore) {
+                    minScoreSegmentIndex = j;
+                    minScore = score;
+                }
+            }
+        }
+
+        if (minScoreSegmentIndex == -1) break;
+
+        selectedSegmentsList.push_back(segments[minScoreSegmentIndex]);
+        for (int client : segments[minScoreSegmentIndex]) {
+            freqClient[client] = true;
+            newlySelectedClients.insert(client);
+        }
+        segmentSelected[minScoreSegmentIndex] = true;
+
+        for (int j = 0; j < pointCut; ++j) {
+            if (!segmentSelected[j]) {
+                bool affected = false;
+                for (int client : segments[j]) {
+                    if (newlySelectedClients.find(client) != newlySelectedClients.end()) {
+                        affected = true;
+                        break;
+                    }
+                }
+                if (affected) {
+                    scores1[j] = evaluateSegment(segments[j], parent1);
+                    scores2[j] = evaluateSegment(segments[j], parent2);
+                }
+            }
+        }
+    }
+
+    // Gestion de l'insertion des segments dans le résultat
+    if (insertionSegment == 0) {
+        // Insertion simple des segments
+        int j = 0;
+        for (const auto& segment : selectedSegmentsList) {
+            for (int client : segment) {
+                result.chromT[j++] = client;
+            }
+        }
+        // Compléter avec les clients restants du parent2
+        for (int i = 0; i < nbClients; ++i) {
+            int client = parent2.chromT[i];
+            if (!freqClient[client]) {
+                result.chromT[j++] = client;
+                freqClient[client] = true;
+            }
+        }
+    } else if (insertionSegment == 1) {
+        // Insertion aléatoire des segments
+        std::shuffle(selectedSegmentsList.begin(), selectedSegmentsList.end(), std::mt19937{std::random_device{}()});
+        int j = 0;
+        for (const auto& segment : selectedSegmentsList) {
+            for (int client : segment) {
+                result.chromT[j++] = client;
+            }
+        }
+        // Compléter avec les clients restants du parent2
+        for (int i = 0; i < nbClients; ++i) {
+            int client = parent2.chromT[i];
+            if (!freqClient[client]) {
+                result.chromT[j++] = client;
+            }
+        }
+    } else if (insertionSegment == 2) {
+        
+        // Méthode 2: Insertion avancée optimisée
+        // Pré-calculer les distances entre les clients
+        std::vector<std::vector<double>> distances(nbClients + 1, std::vector<double>(nbClients + 1, 0.0));
+        for (int i = 0; i <= nbClients; ++i) {
+            for (int j = 0; j <= nbClients; ++j) {
+                distances[i][j] = params.timeCost[i][j];
+            }
+        }
+
+        // Créer un tableau pour stocker les clients déjà ajoutés
+        std::vector<bool> added(nbClients + 1, false);
+
+        // Initialiser le dernier client inséré
+        int lastInsertedClient = 0;
+        result.chromT.clear();  // Réinitialiser le chromosome résultant
+
+        // Priorité des segments à insérer en fonction des distances minimales
+        std::vector<size_t> segmentOrder(selectedSegmentsList.size());
+        std::iota(segmentOrder.begin(), segmentOrder.end(), 0); // Remplir avec 0, 1, 2, ..., numCuts - 1
+        std::sort(segmentOrder.begin(), segmentOrder.end(), [&](size_t a, size_t b) {
+            double distA = distances[lastInsertedClient][selectedSegmentsList[a].front()];
+            double distB = distances[lastInsertedClient][selectedSegmentsList[b].front()];
+            return distA < distB;
+        });
+
+        // Insérer les segments sélectionnés
+        for (size_t i : segmentOrder) {
+            const auto& segment = selectedSegmentsList[i];
+            for (int client : segment) {
+                if (!added[client]) {
+                    result.chromT.push_back(client);
+                    added[client] = true;
+                    lastInsertedClient = client;
+                }
+            }
+        }
+
+        // Compléter avec les clients restants du parent2
+        for (int i = 0; i < nbClients; ++i) {
+            int client = parent2.chromT[i];
+            if (!added[client]) {
+                result.chromT.push_back(client);
+                added[client] = true;
+            }
+        }
+    }
+
+    // Compléter l'individu avec l'algorithme Split
     split.generalSplit(result, parent1.eval.nbRoutes);
 }
 
