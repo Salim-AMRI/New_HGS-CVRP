@@ -174,90 +174,52 @@ void Genetic::crossoverLOX(Individual & result, const Individual & parent1, cons
     split.generalSplit(result, parent1.eval.nbRoutes);
 }
 
-void Genetic::crossoverAOX(Individual & result, const Individual & parent1, const Individual & parent2)
+void Genetic::crossoverAOX(Individual & result, const Individual & p1, const Individual & p2)
 {
-    // Frequency table to track the customers which have been already inserted
+    // Frequency table to track customers already inserted
     std::vector<bool> freqClient = std::vector<bool>(params.nbClients + 1, false);
 
     // Picking the beginning and end of the crossover zone
-    std::uniform_int_distribution<> distr(0, params.nbClients - 1);
-    int start = distr(params.ran);
-    int end = distr(params.ran);
+    int start1 = std::rand() % params.nbClients;
+    int end1 = std::rand() % params.nbClients;
+    while (end1 == start1) end1 = std::rand() % params.nbClients;
 
-    // Avoid that start and end coincide by accident
-    while (end == start)
-        end = distr(params.ran);
+    // Shift zone in p2 to match final customer of zone in p1
+    int start2 = start1, end2 = end1;
+    while (p2.chromT[end2 % params.nbClients] != p1.chromT[end1 % params.nbClients])
+        start2++, end2++;
 
-    // Copy from start to end from parent1
-    int j = start;
-    while (j % params.nbClients != (end + 1) % params.nbClients) {
-        result.chromT[j % params.nbClients] = parent1.chromT[j % params.nbClients];
+    // Test if zone in p1 is different to zone in p2
+    bool same = true;
+    int size = (start1 < end1 ? end1 - start1 : params.nbClients - start1 + end1);
+    for (int j = 0; j < size && same; j++) {
+        if (p1.chromT[(start1 + j) % params.nbClients] != p2.chromT[(start2 + j) % params.nbClients])
+            same = false;
+    }
+
+    // If same, randomize point in p2
+    if (same) end2 = end2 + rand() % (params.nbClients - size);
+
+    // Copy in place the elements from start to end
+    int j = start1;
+    while (j % params.nbClients != (end1 + 1) % params.nbClients) {
+        result.chromT[j % params.nbClients] = p1.chromT[j % params.nbClients];
         freqClient[result.chromT[j % params.nbClients]] = true;
         j++;
     }
 
-    // Find the index of the element in parent2 following the last copied element from parent1
-    int indexOfNextElementInParent2 = -1;
-    for (int i = 0; i < params.nbClients; i++) {
-        int index = (end + i) % params.nbClients;
-        if (parent2.chromT[index] == parent1.chromT[end]) {
-            indexOfNextElementInParent2 = (index + 1) % params.nbClients;
-            break;
-        }
-    }
-
-    // Copy elements from parent2 to result starting from the index of the next element in parent2
-    j = (end + 1) % params.nbClients;
-    for (int i = 0; i < params.nbClients; i++) {
-        int index = (indexOfNextElementInParent2 + i) % params.nbClients;
-        int temp = parent2.chromT[index];
-        if (!freqClient[temp]) {
+    // Fill the remaining elements in the order given by p2
+    for (int i = 1; i <= params.nbClients; i++) {
+        int temp = p2.chromT[(end2 + i) % params.nbClients];
+        if (freqClient[temp] == false) {
             result.chromT[j % params.nbClients] = temp;
-            freqClient[result.chromT[j % params.nbClients]] = true;
             j++;
         }
     }
 
-    // Complete the individual with the Split algorithm
-    split.generalSplit(result, parent1.eval.nbRoutes);
+    // Completing the individual with the Split algorithm
+    split.generalSplit(result, p1.eval.nbRoutes);
 }
-/*
-void Genetic::crossoverAOX(Individual & result, const Individual & parent1, const Individual & parent2)
-{
-    // Frequency table to track the customers which have been already inserted
-    std::vector<bool> freqClient(params.nbClients + 1, false);
-
-    // Picking the beginning and end of the crossover zone
-    std::uniform_int_distribution<> distr(0, params.nbClients - 1);
-    int start = distr(params.ran);
-    int end = distr(params.ran);
-
-    // Avoid that start and end coincide by accident
-    while (end == start)
-        end = distr(params.ran);
-
-    // Copy from parent1 from start to end
-    for (int i = start; i != (end + 1) % params.nbClients; i = (i + 1) % params.nbClients) {
-        result.chromT[i] = parent1.chromT[i];
-        freqClient[result.chromT[i]] = true;
-    }
-
-    // Fill the remaining elements from parent2 in order
-    int j = (end + 1) % params.nbClients;
-    for (int i = 0; i < params.nbClients; ++i) {
-        int index = (end + 1 + i) % params.nbClients;
-        int temp = parent2.chromT[index];
-        if (!freqClient[temp]) {
-            result.chromT[j] = temp;
-            freqClient[temp] = true;
-            j = (j + 1) % params.nbClients;
-        }
-    }
-
-    // Complete the individual with the Split algorithm
-    split.generalSplit(result, parent1.eval.nbRoutes);
-}
-*/
 
 void Genetic::crossoverUOX(Individual & result, const Individual & parent1, const Individual & parent2)
 {
