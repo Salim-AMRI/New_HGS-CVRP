@@ -45,7 +45,7 @@ void Genetic::run()
                     crossoverPathRelinking(offspring, population.getBinaryTournament(), population.getBinaryTournament());
                 } else if (params.ap.crossoverType == 9) {
                     crossoverGrPX2(offspring, population.getBinaryTournament(), population.getBinaryTournament());
-                } else if (params.ap.crossoverType == 12) {
+                } else if (params.ap.crossoverType == 10) {
                     crossoverGOX(offspring, population.getBinaryTournament(), population.getBinaryTournament());
                 }
 
