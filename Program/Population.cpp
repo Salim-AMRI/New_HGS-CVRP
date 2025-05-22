@@ -280,10 +280,14 @@ void Population::exportSearchProgress(std::string fileName, std::string instance
     std::pair<clock_t, double> state =  searchProgress.back();
     
     std::cout << "Print results "<< std::endl;
+    std::ofstream MyFile;
+        if (params.ap.crossoverType == 10) {
+            MyFile.open("results/Instance_" + std::to_string(params.nbClients + 1) + "_" + "crossover_type_" + std::to_string(params.ap.crossoverType) + "_nbCut_" + std::to_string(params.ap.nbCut) + "_" + "eqSeg_" + std::to_string(params.ap.eqSeg) + "_" + "useCostBenefit_" + std::to_string(params.ap.useCostBenefit) + "_" + "randSelect_" + std::to_string(params.ap.randSelect) + "_" + "insertSeg_" + std::to_string(params.ap.insertSeg) + "_seed_" +  std::to_string(params.ap.seed) + ".txt");
+        } else {
+            MyFile.open("results/Instance_" + std::to_string(params.nbClients + 1) + "_" + "crossover_type_" + std::to_string(params.ap.crossoverType) + "_seed_" +  std::to_string(params.ap.seed) + ".txt");
+        }
     
-    std::ofstream MyFile("results/Instance_" + std::to_string(params.nbClients + 1) + "_" + std::to_string(params.ap.crossoverType) + "_seed_" +  std::to_string(params.ap.seed) + ".txt");
-        
-     MyFile << state.second << ";" << (double)state.first / (double)CLOCKS_PER_SEC << std::endl;
+    MyFile << state.second << ";" << (double)state.first / (double)CLOCKS_PER_SEC << std::endl;
     
     MyFile.close();
     
